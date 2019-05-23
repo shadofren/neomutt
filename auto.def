@@ -95,6 +95,8 @@ options {
 # Testing
   testing=0                 => "Enable Unit Testing"
   coverage=0                => "Enable Coverage Testing"
+# Fuzzing
+  fuzzing                   => "Enable Fuzz Testing"
 # Configure with pkg-config
   pkgconf=0                 => "Use pkg-config during configure"
 # Enable all options
@@ -109,7 +111,7 @@ options {
 if {1} {
   # Keep sorted, please.
   foreach opt {
-    bdb backtrace coverage doc everything fmemopen full-doc gdbm gnutls gpgme
+    bdb backtrace coverage doc everything fmemopen full-doc fuzzing gdbm gnutls gpgme
     gss homespool idn idn2 inotify kyotocabinet lmdb locales-fix lua mixmaster
     nls notmuch pkgconf pgp qdbm sasl smime ssl testing tokyocabinet
   } {
@@ -539,6 +541,13 @@ if {[get-define want-coverage]} {
 if {[get-define want-testing]} {
   define ENABLE_UNIT_TESTS
   lappend subdirs test
+}
+
+###############################################################################
+# Fuzz Testing
+if {[get-define want-fuzzing]} {
+  define ENABLE_FUZZ_TESTS
+  lappend subdirs fuzz
 }
 
 ###############################################################################
