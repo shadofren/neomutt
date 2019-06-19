@@ -242,7 +242,7 @@ static void collapse_all(struct Menu *menu, int toggle)
   struct MuttThread *thread = NULL, *top = NULL;
   int final;
 
-  if (!Context || (Context->mailbox->msg_count == 0))
+  if (!Context || !Context->mailbox || (Context->mailbox->msg_count == 0))
     return;
 
   /* Figure out what the current message would be after folding / unfolding,
@@ -300,6 +300,9 @@ static void collapse_all(struct Menu *menu, int toggle)
  */
 static int ci_next_undeleted(int msgno)
 {
+  if (!Context || !Context->mailbox)
+    return -1;
+
   for (int i = msgno + 1; i < Context->mailbox->vcount; i++)
     if (!Context->mailbox->emails[Context->mailbox->v2r[i]]->deleted)
       return i;
@@ -314,6 +317,9 @@ static int ci_next_undeleted(int msgno)
  */
 static int ci_previous_undeleted(int msgno)
 {
+  if (!Context || !Context->mailbox)
+    return -1;
+
   for (int i = msgno - 1; i >= 0; i--)
     if (!Context->mailbox->emails[Context->mailbox->v2r[i]]->deleted)
       return i;
@@ -329,7 +335,7 @@ static int ci_previous_undeleted(int msgno)
  */
 static int ci_first_message(void)
 {
-  if (!Context || (Context->mailbox->msg_count == 0))
+  if (!Context || !Context->mailbox || (Context->mailbox->msg_count == 0))
     return 0;
 
   int old = -1;
@@ -402,6 +408,9 @@ static int mx_toggle_write(struct Mailbox *m)
  */
 static void resort_index(struct Menu *menu)
 {
+  if (!Context || !Context->mailbox)
+    return;
+
   struct Email *current = CUR_EMAIL;
 
   menu->current = -1;
@@ -637,10 +646,10 @@ static int main_change_folder(struct Menu *menu, int op, struct Mailbox *m,
   }
 
   /* keepalive failure in mutt_enter_fname may kill connection. #3028 */
-  if (Context && (mutt_buffer_is_empty(Context->mailbox->pathbuf)))
+  if (Context && Context->mailbox && (mutt_buffer_is_empty(Context->mailbox->pathbuf)))
     ctx_free(&Context);
 
-  if (Context)
+  if (Context && Context->mailbox)
   {
     char *new_last_folder = NULL;
 #ifdef USE_INOTIFY
@@ -735,7 +744,8 @@ static int main_change_folder(struct Menu *menu, int op, struct Mailbox *m,
  */
 void index_make_entry(char *buf, size_t buflen, struct Menu *menu, int line)
 {
-  if (!Context || !menu || (line < 0) || (line >= Context->mailbox->email_max))
+  if (!Context || !Context->mailbox || !menu || (line < 0) ||
+      (line >= Context->mailbox->email_max))
     return;
 
   struct Email *e = Context->mailbox->emails[Context->mailbox->v2r[line]];
@@ -808,7 +818,7 @@ void index_make_entry(char *buf, size_t buflen, struct Menu *menu, int line)
  */
 int index_color(int line)
 {
-  if (!Context || (line < 0))
+  if (!Context || !Context->mailbox || (line < 0))
     return 0;
 
   struct Email *e = Context->mailbox->emails[Context->mailbox->v2r[line]];
@@ -974,7 +984,8 @@ static void index_custom_redraw(struct Menu *menu)
     menu_redraw_sidebar(menu);
 #endif
 
-  if (Context && Context->mailbox->emails && !(menu->current >= Context->mailbox->vcount))
+  if (Context && Context->mailbox && Context->mailbox->emails &&
+      !(menu->current >= Context->mailbox->vcount))
   {
     menu_check_recenter(menu);
 
@@ -1035,12 +1046,13 @@ int mutt_index_menu(void)
   menu->menu_make_entry = index_make_entry;
   menu->menu_color = index_color;
   menu->current = ci_first_message();
-  menu->help = mutt_compile_help(helpstr, sizeof(helpstr), MENU_MAIN,
+  menu->help = mutt_compile_help(
+      helpstr, sizeof(helpstr), MENU_MAIN,
 #ifdef USE_NNTP
-                                 (Context && (Context->mailbox->magic == MUTT_NNTP)) ?
-                                     IndexNewsHelp :
+      (Context && Context->mailbox && (Context->mailbox->magic == MUTT_NNTP)) ?
+          IndexNewsHelp :
 #endif
-                                     IndexHelp);
+          IndexHelp);
   menu->menu_custom_redraw = index_custom_redraw;
   mutt_menu_push_current(menu);
 
@@ -1069,15 +1081,15 @@ int mutt_index_menu(void)
     /* check if we need to resort the index because just about
      * any 'op' below could do mutt_enter_command(), either here or
      * from any new menu launched, and change $sort/$sort_aux */
-    if (OptNeedResort && Context && (Context->mailbox->msg_count != 0) &&
-        (menu->current >= 0))
+    if (OptNeedResort && Context && Context->mailbox &&
+        (Context->mailbox->msg_count != 0) && (menu->current >= 0))
       resort_index(menu);
 
-    menu->max = Context ? Context->mailbox->vcount : 0;
-    oldcount = Context ? Context->mailbox->msg_count : 0;
+    menu->max = (Context && Context->mailbox) ? Context->mailbox->vcount : 0;
+    oldcount = (Context && Context->mailbox) ? Context->mailbox->msg_count : 0;
 
-    if (OptRedrawTree && Context && (Context->mailbox->msg_count != 0) &&
-        ((C_Sort & SORT_MASK) == SORT_THREADS))
+    if (OptRedrawTree && Context && Context->mailbox &&
+        (Context->mailbox->msg_count != 0) && ((C_Sort & SORT_MASK) == SORT_THREADS))
     {
       mutt_draw_tree(Context);
       menu->redraw |= REDRAW_STATUS;
@@ -1087,7 +1099,7 @@ int mutt_index_menu(void)
     if (Context)
       Context->menu = menu;
 
-    if (Context && !attach_msg)
+    if (Context && Context->mailbox && !attach_msg)
     {
       int check;
       /* check for new mail in the mailbox.  If nonzero, then something has
@@ -1709,7 +1721,7 @@ int mutt_index_menu(void)
         {
           int check;
 
-          oldcount = Context ? Context->mailbox->msg_count : 0;
+          oldcount = (Context && Context->mailbox) ? Context->mailbox->msg_count : 0;
 
           mutt_startup_shutdown_hook(MUTT_SHUTDOWN_HOOK);
 
@@ -1748,7 +1760,7 @@ int mutt_index_menu(void)
       case OP_SORT_REVERSE:
         if (mutt_select_sort((op == OP_SORT_REVERSE)) == 0)
         {
-          if (Context && (Context->mailbox->msg_count != 0))
+          if (Context && Context->mailbox && (Context->mailbox->msg_count != 0))
           {
             resort_index(menu);
             OptSearchInvalid = true;
@@ -1843,12 +1855,12 @@ int mutt_index_menu(void)
 
 #ifdef USE_IMAP
       case OP_MAIN_IMAP_FETCH:
-        if (Context && (Context->mailbox->magic == MUTT_IMAP))
+        if (Context && Context->mailbox && (Context->mailbox->magic == MUTT_IMAP))
           imap_check_mailbox(Context->mailbox, true);
         break;
 
       case OP_MAIN_IMAP_LOGOUT_ALL:
-        if (Context && (Context->mailbox->magic == MUTT_IMAP))
+        if (Context && Context->mailbox && (Context->mailbox->magic == MUTT_IMAP))
         {
           int check = mx_mbox_close(&Context);
           if (check != 0)
@@ -1868,7 +1880,7 @@ int mutt_index_menu(void)
 #endif
 
       case OP_MAIN_SYNC_FOLDER:
-        if (Context && (Context->mailbox->msg_count == 0))
+        if (!Context || !Context->mailbox || (Context->mailbox->msg_count == 0))
           break;
 
         if (!prereq(Context, menu, CHECK_IN_MAILBOX | CHECK_MSGCOUNT | CHECK_READONLY))
@@ -2013,7 +2025,9 @@ int mutt_index_menu(void)
       case OP_MAIN_MODIFY_TAGS:
       case OP_MAIN_MODIFY_TAGS_THEN_HIDE:
       {
-        if (!Context || !mx_tags_is_supported(Context->mailbox))
+        if (!Context || !Context->mailbox)
+          break;
+        if (!mx_tags_is_supported(Context->mailbox))
         {
           mutt_message(_("Folder doesn't support tagging, aborting"));
           break;
@@ -2220,7 +2234,7 @@ int mutt_index_menu(void)
           cp = _("Open mailbox");
 
         if ((op == OP_MAIN_NEXT_UNREAD_MAILBOX) && Context &&
-            !mutt_buffer_is_empty(Context->mailbox->pathbuf))
+            Context->mailbox && !mutt_buffer_is_empty(Context->mailbox->pathbuf))
         {
           mutt_buffer_strcpy(folderbuf, mutt_b2s(Context->mailbox->pathbuf));
           mutt_buffer_pretty_mailbox(folderbuf);
@@ -2245,7 +2259,7 @@ int mutt_index_menu(void)
 #endif
         else
         {
-          if (C_ChangeFolderNext && Context &&
+          if (C_ChangeFolderNext && Context && Context->mailbox &&
               mutt_buffer_is_empty(Context->mailbox->pathbuf))
           {
             mutt_buffer_strcpy(folderbuf, mutt_b2s(Context->mailbox->pathbuf));
@@ -2300,9 +2314,11 @@ int mutt_index_menu(void)
                            &oldcount, &index_hint);
 #ifdef USE_NNTP
         /* mutt_mailbox_check() must be done with mail-reader mode! */
-        menu->help = mutt_compile_help(
-            helpstr, sizeof(helpstr), MENU_MAIN,
-            (Context && (Context->mailbox->magic == MUTT_NNTP)) ? IndexNewsHelp : IndexHelp);
+        menu->help = mutt_compile_help(helpstr, sizeof(helpstr), MENU_MAIN,
+                                       (Context && Context->mailbox &&
+                                        (Context->mailbox->magic == MUTT_NNTP)) ?
+                                           IndexNewsHelp :
+                                           IndexHelp);
 #endif
         mutt_buffer_expand_path(folderbuf);
 #ifdef USE_SIDEBAR
@@ -2984,7 +3000,10 @@ int mutt_index_menu(void)
       }
 
       case OP_CREATE_ALIAS:
-        mutt_alias_create(Context && Context->mailbox->vcount ? CUR_EMAIL->env : NULL, NULL);
+        mutt_alias_create(Context && Context->mailbox && Context->mailbox->vcount ?
+                              CUR_EMAIL->env :
+                              NULL,
+                          NULL);
         menu->redraw |= REDRAW_CURRENT;
         break;
 
@@ -3424,7 +3443,7 @@ int mutt_index_menu(void)
         /* fallthrough */
 
       case OP_POST:
-        if (!prereq(Context, menu, CHECK_ATTACH))
+        if (!prereq(Context, menu, CHECK_IN_MAILBOX | CHECK_ATTACH))
           break;
         if ((op != OP_FOLLOWUP) || !CUR_EMAIL->env->followup_to ||
             (mutt_str_strcasecmp(CUR_EMAIL->env->followup_to, "poster") != 0) ||
@@ -3670,7 +3689,7 @@ int mutt_reply_observer(struct NotifyCallback *nc)
   if (mutt_str_strcmp(ec->name, "reply_regex") != 0)
     return 0;
 
-  if (!Context)
+  if (!Context || !Context->mailbox)
     return 0;
 
   regmatch_t pmatch[1];
