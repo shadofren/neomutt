@@ -184,12 +184,12 @@ static void matches_ensure_morespace(int current)
  *
  * Changes the dest buffer if necessary/possible to aid completion.
  */
-static void candidate(char *try, const char *src, char *dest, size_t dlen)
+static void candidate(char *try_, const char *src, char *dest, size_t dlen)
 {
-  if (!dest || !try || !src)
+  if (!dest || !try_ || !src)
     return;
 
-  if (strstr(src, try) != src)
+  if (strstr(src, try_) != src)
     return;
 
   matches_ensure_morespace(NumMatched);
