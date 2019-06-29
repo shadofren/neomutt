@@ -85,25 +85,25 @@ void unlink_message(struct MuttThread **old, struct MuttThread *cur)
 
 /**
  * insert_message - Insert a message into a thread
- * @param[in,out] new       New thread to add
+ * @param[in,out] new_       New thread to add
  * @param[in]     newparent Parent of new thread
  * @param[in]     cur       Current thread to add after
  *
- * add cur as a prior sibling of *new, with parent newparent
+ * add cur as a prior sibling of *new_, with parent newparent
  */
-void insert_message(struct MuttThread **new, struct MuttThread *newparent,
+void insert_message(struct MuttThread **new_, struct MuttThread *newparent,
                     struct MuttThread *cur)
 {
-  if (!cur || !new)
+  if (!cur || !new_)
     return;
 
-  if (*new)
-    (*new)->prev = cur;
+  if (*new_)
+    (*new_)->prev = cur;
 
   cur->parent = newparent;
-  cur->next = *new;
+  cur->next = *new_;
   cur->prev = NULL;
-  *new = cur;
+  *new_ = cur;
 }
 
 /**

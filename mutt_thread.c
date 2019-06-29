@@ -840,7 +840,7 @@ void mutt_sort_threads(struct Context *ctx, bool init)
 
   struct Email *cur = NULL;
   int i, oldsort, using_refs = 0;
-  struct MuttThread *thread = NULL, *new = NULL, *tmp = NULL;
+  struct MuttThread *thread = NULL, *new_ = NULL, *tmp = NULL;
   struct MuttThread top = { 0 };
   struct ListNode *ref = NULL;
 
@@ -923,7 +923,7 @@ void mutt_sort_threads(struct Context *ctx, bool init)
       }
       else
       {
-        new = (C_DuplicateThreads ? thread : NULL);
+        new_ = (C_DuplicateThreads ? thread : NULL);
 
         thread = mutt_mem_calloc(1, sizeof(struct MuttThread));
         thread->message = cur;
@@ -932,14 +932,14 @@ void mutt_sort_threads(struct Context *ctx, bool init)
         mutt_hash_insert(ctx->thread_hash,
                          cur->env->message_id ? cur->env->message_id : "", thread);
 
-        if (new)
+        if (new_)
         {
-          if (new->duplicate_thread)
-            new = new->parent;
+          if (new_->duplicate_thread)
+            new_ = new_->parent;
 
           thread = cur->thread;
 
-          insert_message(&new->child, new, thread);
+          insert_message(&new_->child, new_, thread);
           thread->duplicate_thread = true;
           thread->message->threaded = true;
         }
@@ -950,16 +950,16 @@ void mutt_sort_threads(struct Context *ctx, bool init)
       /* unlink pseudo-threads because they might be children of newly
        * arrived messages */
       thread = cur->thread;
-      for (new = thread->child; new;)
+      for (new_ = thread->child; new_;)
       {
-        tmp = new->next;
-        if (new->fake_thread)
+        tmp = new_->next;
+        if (new_->fake_thread)
         {
-          unlink_message(&thread->child, new);
-          insert_message(&top.child, &top, new);
-          new->fake_thread = false;
+          unlink_message(&thread->child, new_);
+          insert_message(&top.child, &top, new_);
+          new_->fake_thread = false;
         }
-        new = tmp;
+        new_ = tmp;
       }
     }
   }
@@ -1014,24 +1014,24 @@ void mutt_sort_threads(struct Context *ctx, bool init)
       if (!ref)
         break;
 
-      new = mutt_hash_find(ctx->thread_hash, ref->data);
-      if (!new)
+      new_ = mutt_hash_find(ctx->thread_hash, ref->data);
+      if (!new_)
       {
-        new = mutt_mem_calloc(1, sizeof(struct MuttThread));
-        mutt_hash_insert(ctx->thread_hash, ref->data, new);
+        new_ = mutt_mem_calloc(1, sizeof(struct MuttThread));
+        mutt_hash_insert(ctx->thread_hash, ref->data, new_);
       }
       else
       {
-        if (new->duplicate_thread)
-          new = new->parent;
-        if (is_descendant(new, thread)) /* no loops! */
+        if (new_->duplicate_thread)
+          new_ = new_->parent;
+        if (is_descendant(new_, thread)) /* no loops! */
           continue;
       }
 
       if (thread->parent)
         unlink_message(&top.child, thread);
-      insert_message(&new->child, new, thread);
-      thread = new;
+      insert_message(&new_->child, new_, thread);
+      thread = new_;
       if (thread->message || (thread->parent && (thread->parent != &top)))
         break;
     }
@@ -1224,7 +1224,7 @@ int mutt_traverse_thread(struct Context *ctx, struct Email *cur, MuttThreadFlags
   struct MuttThread *thread = NULL, *top = NULL;
   struct Email *roothdr = NULL;
   int final, reverse = (C_Sort & SORT_REVERSE), minmsgno;
-  int num_hidden = 0, new = 0, old = 0;
+  int num_hidden = 0, new_ = 0, old = 0;
   bool flagged = false;
   int min_unread_msgno = INT_MAX, min_unread = cur->virtual;
 #define CHECK_LIMIT (!ctx->pattern || cur->limited)
@@ -1250,7 +1250,7 @@ int mutt_traverse_thread(struct Context *ctx, struct Email *cur, MuttThreadFlags
     if (cur->old)
       old = 2;
     else
-      new = 1;
+      new_ = 1;
     if (cur->msgno < min_unread_msgno)
     {
       min_unread = cur->virtual;
@@ -1282,7 +1282,7 @@ int mutt_traverse_thread(struct Context *ctx, struct Email *cur, MuttThreadFlags
     if (flag & (MUTT_THREAD_COLLAPSE | MUTT_THREAD_UNCOLLAPSE))
       return final;
     else if (flag & MUTT_THREAD_UNREAD)
-      return (old && new) ? new : (old ? old : new);
+      return (old && new_) ? new_ : (old ? old : new_);
     else if (flag & MUTT_THREAD_GET_HIDDEN)
       return num_hidden;
     else if (flag & MUTT_THREAD_NEXT_UNREAD)
@@ -1331,7 +1331,7 @@ int mutt_traverse_thread(struct Context *ctx, struct Email *cur, MuttThreadFlags
         if (cur->old)
           old = 2;
         else
-          new = 1;
+          new_ = 1;
         if (cur->msgno < min_unread_msgno)
         {
           min_unread = cur->virtual;
@@ -1372,7 +1372,7 @@ int mutt_traverse_thread(struct Context *ctx, struct Email *cur, MuttThreadFlags
   if (flag & (MUTT_THREAD_COLLAPSE | MUTT_THREAD_UNCOLLAPSE))
     return final;
   else if (flag & MUTT_THREAD_UNREAD)
-    return (old && new) ? new : (old ? old : new);
+    return (old && new_) ? new_ : (old ? old : new_);
   else if (flag & MUTT_THREAD_GET_HIDDEN)
     return num_hidden + 1;
   else if (flag & MUTT_THREAD_NEXT_UNREAD)

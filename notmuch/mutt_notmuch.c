@@ -1492,12 +1492,12 @@ static int remove_filename(struct Mailbox *m, const char *path)
  * rename_filename - Rename the file
  * @param m   Notmuch Mailbox data
  * @param old Old filename
- * @param new New filename
+ * @param new_ New filename
  * @param e   Email
  * @retval  0 Success
  * @retval -1 Failure
  */
-static int rename_filename(struct Mailbox *m, const char *old, const char *new,
+static int rename_filename(struct Mailbox *m, const char *old, const char *new_,
                            struct Email *e)
 {
   struct NmMboxData *mdata = nm_mdata_get(m);
@@ -1505,7 +1505,7 @@ static int rename_filename(struct Mailbox *m, const char *old, const char *new,
     return -1;
 
   notmuch_database_t *db = nm_db_get(m, true);
-  if (!db || !new || !old || (access(new, F_OK) != 0))
+  if (!db || !new_ || !old || (access(new_, F_OK) != 0))
     return -1;
 
   int rc = -1;
@@ -2289,7 +2289,7 @@ static int nm_mbox_check(struct Mailbox *m, int *index_hint)
        notmuch_messages_move_to_next(msgs), i++)
   {
     char old[PATH_MAX];
-    const char *new = NULL;
+    const char *new_ = NULL;
 
     notmuch_message_t *msg = notmuch_messages_get(msgs);
     struct Email *e = get_mutt_email(m, msg);
@@ -2307,18 +2307,18 @@ static int nm_mbox_check(struct Mailbox *m, int *index_hint)
 
     /* Check to see if the message has moved to a different subdirectory.
      * If so, update the associated filename.  */
-    new = get_message_last_filename(msg);
+    new_ = get_message_last_filename(msg);
     email_get_fullpath(e, old, sizeof(old));
 
-    if (mutt_str_strcmp(old, new) != 0)
-      update_message_path(e, new);
+    if (mutt_str_strcmp(old, new_) != 0)
+      update_message_path(e, new_);
 
     if (!e->changed)
     {
       /* if the user hasn't modified the flags on this message, update the
        * flags we just detected.  */
       struct Email tmp = { 0 };
-      maildir_parse_flags(&tmp, new);
+      maildir_parse_flags(&tmp, new_);
       maildir_update_flags(m, e, &tmp);
     }
 
@@ -2389,7 +2389,7 @@ static int nm_mbox_sync(struct Mailbox *m, int *index_hint)
 
   for (int i = 0; i < m->msg_count; i++)
   {
-    char old[PATH_MAX], new[PATH_MAX];
+    char old[PATH_MAX], new_[PATH_MAX];
     struct Email *e = m->emails[i];
     struct NmEmailData *edata = e->edata;
 
@@ -2397,7 +2397,7 @@ static int nm_mbox_sync(struct Mailbox *m, int *index_hint)
       mutt_progress_update(&progress, i, -1);
 
     *old = '\0';
-    *new = '\0';
+    *new_ = '\0';
 
     if (edata->oldpath)
     {
@@ -2418,13 +2418,13 @@ static int nm_mbox_sync(struct Mailbox *m, int *index_hint)
       break;
 
     if (!e->deleted)
-      email_get_fullpath(e, new, sizeof(new));
+      email_get_fullpath(e, new_, sizeof(new_));
 
-    if (e->deleted || (strcmp(old, new) != 0))
+    if (e->deleted || (strcmp(old, new_) != 0))
     {
       if (e->deleted && (remove_filename(m, old) == 0))
         changed = true;
-      else if (*new &&*old && (rename_filename(m, old, new, e) == 0))
+      else if (*new_ &&*old && (rename_filename(m, old, new_, e) == 0))
         changed = true;
     }
 

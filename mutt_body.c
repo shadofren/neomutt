@@ -103,13 +103,13 @@ int mutt_body_copy(FILE *fp, struct Body **tgt, struct Body *src)
     b->email = NULL;
 
   /* copy parameters */
-  struct Parameter *np = NULL, *new = NULL;
+  struct Parameter *np = NULL, *new_ = NULL;
   TAILQ_FOREACH(np, &src->parameter, entries)
   {
-    new = mutt_param_new();
-    new->attribute = mutt_str_strdup(np->attribute);
-    new->value = mutt_str_strdup(np->value);
-    TAILQ_INSERT_HEAD(&b->parameter, new, entries);
+    new_ = mutt_param_new();
+    new_->attribute = mutt_str_strdup(np->attribute);
+    new_->value = mutt_str_strdup(np->value);
+    TAILQ_INSERT_HEAD(&b->parameter, new_, entries);
   }
 
   mutt_stamp_attachment(b);

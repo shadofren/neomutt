@@ -96,7 +96,7 @@ void mutt_auto_subscribe(const char *mailto)
  */
 static void parse_parameters(struct ParameterList *param, const char *s)
 {
-  struct Parameter *new = NULL;
+  struct Parameter *new_ = NULL;
   char buf[1024];
   const char *p = NULL;
   size_t i;
@@ -125,12 +125,12 @@ static void parse_parameters(struct ParameterList *param, const char *s)
       if (i == 0)
       {
         mutt_debug(LL_DEBUG1, "missing attribute: %s\n", s);
-        new = NULL;
+        new_ = NULL;
       }
       else
       {
-        new = mutt_param_new();
-        new->attribute = mutt_str_substr_dup(s, s + i);
+        new_ = mutt_param_new();
+        new_->attribute = mutt_str_substr_dup(s, s + i);
       }
 
       s = mutt_str_skip_email_wsp(p + 1); /* skip over the = */
@@ -177,15 +177,15 @@ static void parse_parameters(struct ParameterList *param, const char *s)
       }
 
       /* if the attribute token was missing, 'new' will be NULL */
-      if (new)
+      if (new_)
       {
-        new->value = mutt_str_strdup(buf);
+        new_->value = mutt_str_strdup(buf);
 
         mutt_debug(LL_DEBUG2, "parse_parameter: '%s' = '%s'\n",
-                   new->attribute ? new->attribute : "", new->value ? new->value : "");
+                   new_->attribute ? new_->attribute : "", new_->value ? new_->value : "");
 
         /* Add this parameter to the list */
-        TAILQ_INSERT_HEAD(param, new, entries);
+        TAILQ_INSERT_HEAD(param, new_, entries);
       }
     }
     else
@@ -1350,7 +1350,7 @@ struct Body *mutt_parse_multipart(FILE *fp, const char *boundary, LOFF_T end_off
   }
 
   char buf[1024];
-  struct Body *head = NULL, *last = NULL, *new = NULL;
+  struct Body *head = NULL, *last = NULL, *new_ = NULL;
   bool final = false; /* did we see the ending boundary? */
 
   const size_t blen = mutt_str_strlen(boundary);
@@ -1387,13 +1387,13 @@ struct Body *mutt_parse_multipart(FILE *fp, const char *boundary, LOFF_T end_off
       }
       else if (buf[2 + blen] == '\0')
       {
-        new = mutt_read_mime_header(fp, digest);
+        new_ = mutt_read_mime_header(fp, digest);
 
 #ifdef SUN_ATTACHMENT
-        if (mutt_param_get(&new->parameter, "content-lines"))
+        if (mutt_param_get(&new_->parameter, "content-lines"))
         {
           int lines = 0;
-          if (mutt_str_atoi(mutt_param_get(&new->parameter, "content-lines"), &lines) < 0)
+          if (mutt_str_atoi(mutt_param_get(&new_->parameter, "content-lines"), &lines) < 0)
             lines = 0;
           for (; lines > 0; lines--)
             if ((ftello(fp) >= end_off) || !fgets(buf, sizeof(buf), fp))
@@ -1401,20 +1401,20 @@ struct Body *mutt_parse_multipart(FILE *fp, const char *boundary, LOFF_T end_off
         }
 #endif
         /* Consistency checking - catch bad attachment end boundaries */
-        if (new->offset > end_off)
+        if (new_->offset > end_off)
         {
-          mutt_body_free(&new);
+          mutt_body_free(&new_);
           break;
         }
         if (head)
         {
-          last->next = new;
-          last = new;
+          last->next = new_;
+          last = new_;
         }
         else
         {
-          last = new;
-          head = new;
+          last = new_;
+          head = new_;
         }
       }
     }

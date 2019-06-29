@@ -180,15 +180,15 @@ static void group_add_addrlist(struct Group *g, const struct AddressList *al)
   if (!g || !al)
     return;
 
-  struct AddressList new = TAILQ_HEAD_INITIALIZER(new);
-  mutt_addrlist_copy(&new, al, false);
-  mutt_addrlist_remove_xrefs(&g->al, &new);
+  struct AddressList new_ = TAILQ_HEAD_INITIALIZER(new_);
+  mutt_addrlist_copy(&new_, al, false);
+  mutt_addrlist_remove_xrefs(&g->al, &new_);
   struct Address *a = NULL, *tmp = NULL;
-  TAILQ_FOREACH_SAFE(a, &new, entries, tmp)
+  TAILQ_FOREACH_SAFE(a, &new_, entries, tmp)
   {
     mutt_addrlist_append(&g->al, a);
   }
-  assert(TAILQ_EMPTY(&new));
+  assert(TAILQ_EMPTY(&new_));
 }
 
 /**

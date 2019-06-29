@@ -604,12 +604,12 @@ static void mutt_gen_compose_attach_list(struct AttachCtx *actx, struct Body *m,
     }
     else
     {
-      struct AttachPtr *new = mutt_mem_calloc(1, sizeof(struct AttachPtr));
-      mutt_actx_add_attach(actx, new);
-      new->content = m;
-      m->aptr = new;
-      new->parent_type = parent_type;
-      new->level = level;
+      struct AttachPtr *new_ = mutt_mem_calloc(1, sizeof(struct AttachPtr));
+      mutt_actx_add_attach(actx, new_);
+      new_->content = m;
+      m->aptr = new_;
+      new_->parent_type = parent_type;
+      new_->level = level;
 
       /* We don't support multipart messages in the compose menu yet */
     }
@@ -651,13 +651,13 @@ static void mutt_update_compose_menu(struct AttachCtx *actx, struct Menu *menu, 
  * @param actx Attachment context
  * @param new  Attachment to add
  */
-static void update_idx(struct Menu *menu, struct AttachCtx *actx, struct AttachPtr *new)
+static void update_idx(struct Menu *menu, struct AttachCtx *actx, struct AttachPtr *new_)
 {
-  new->level = (actx->idxlen > 0) ? actx->idx[actx->idxlen - 1]->level : 0;
+  new_->level = (actx->idxlen > 0) ? actx->idx[actx->idxlen - 1]->level : 0;
   if (actx->idxlen)
-    actx->idx[actx->idxlen - 1]->content->next = new->content;
-  new->content->aptr = new;
-  mutt_actx_add_attach(actx, new);
+    actx->idx[actx->idxlen - 1]->content->next = new_->content;
+  new_->content->aptr = new_;
+  mutt_actx_add_attach(actx, new_);
   mutt_update_compose_menu(actx, menu, false);
   menu->current = actx->vcount - 1;
 }
@@ -1115,15 +1115,15 @@ int mutt_compose_menu(struct Email *msg, char *fcc, size_t fcclen, struct Email 
       {
         if (!(WithCrypto & APPLICATION_PGP))
           break;
-        struct AttachPtr *new = mutt_mem_calloc(1, sizeof(struct AttachPtr));
-        new->content = crypt_pgp_make_key_attachment();
-        if (new->content)
+        struct AttachPtr *new_ = mutt_mem_calloc(1, sizeof(struct AttachPtr));
+        new_->content = crypt_pgp_make_key_attachment();
+        if (new_->content)
         {
-          update_idx(menu, actx, new);
+          update_idx(menu, actx, new_);
           menu->redraw |= REDRAW_INDEX;
         }
         else
-          FREE(&new);
+          FREE(&new_);
 
         menu->redraw |= REDRAW_STATUS;
 
@@ -1366,16 +1366,16 @@ int mutt_compose_menu(struct Email *msg, char *fcc, size_t fcclen, struct Email 
         for (int i = 0; i < numfiles; i++)
         {
           char *att = files[i];
-          struct AttachPtr *new = mutt_mem_calloc(1, sizeof(struct AttachPtr));
-          new->unowned = true;
-          new->content = mutt_make_file_attach(att);
-          if (new->content)
-            update_idx(menu, actx, new);
+          struct AttachPtr *new_ = mutt_mem_calloc(1, sizeof(struct AttachPtr));
+          new_->unowned = true;
+          new_->content = mutt_make_file_attach(att);
+          if (new_->content)
+            update_idx(menu, actx, new_);
           else
           {
             error = true;
             mutt_error(_("Unable to attach %s"), att);
-            FREE(&new);
+            FREE(&new_);
           }
           FREE(&files[i]);
         }
@@ -1488,15 +1488,15 @@ int mutt_compose_menu(struct Email *msg, char *fcc, size_t fcclen, struct Email 
           if (!message_is_tagged(Context, i))
             continue;
 
-          struct AttachPtr *new = mutt_mem_calloc(1, sizeof(struct AttachPtr));
-          new->content = mutt_make_message_attach(Context->mailbox,
+          struct AttachPtr *new_ = mutt_mem_calloc(1, sizeof(struct AttachPtr));
+          new_->content = mutt_make_message_attach(Context->mailbox,
                                                   Context->mailbox->emails[i], true);
-          if (new->content)
-            update_idx(menu, actx, new);
+          if (new_->content)
+            update_idx(menu, actx, new_);
           else
           {
             mutt_error(_("Unable to attach"));
-            FREE(&new);
+            FREE(&new_);
           }
         }
         menu->redraw |= REDRAW_FULL;
@@ -1779,25 +1779,25 @@ int mutt_compose_menu(struct Email *msg, char *fcc, size_t fcclen, struct Email 
           mutt_error(_("Unknown Content-Type %s"), type);
           continue;
         }
-        struct AttachPtr *new = mutt_mem_calloc(1, sizeof(struct AttachPtr));
+        struct AttachPtr *new_ = mutt_mem_calloc(1, sizeof(struct AttachPtr));
         /* Touch the file */
         FILE *fp = mutt_file_fopen(buf, "w");
         if (!fp)
         {
           mutt_error(_("Can't create file %s"), buf);
-          FREE(&new);
+          FREE(&new_);
           continue;
         }
         mutt_file_fclose(&fp);
 
-        new->content = mutt_make_file_attach(buf);
-        if (!new->content)
+        new_->content = mutt_make_file_attach(buf);
+        if (!new_->content)
         {
           mutt_error(_("What we have here is a failure to make an attachment"));
-          FREE(&new);
+          FREE(&new_);
           continue;
         }
-        update_idx(menu, actx, new);
+        update_idx(menu, actx, new_);
 
         CUR_ATTACH->content->type = itype;
         mutt_str_replace(&CUR_ATTACH->content->subtype, p);

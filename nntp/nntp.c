@@ -2044,7 +2044,7 @@ int nntp_post(struct Mailbox *m, const char *msg)
  * @retval  0 Success
  * @retval -1 Failure
  */
-int nntp_active_fetch(struct NntpAccountData *adata, bool new)
+int nntp_active_fetch(struct NntpAccountData *adata, bool new_)
 {
   struct NntpMboxData tmp_mdata;
   char msg[256];
@@ -2072,12 +2072,12 @@ int nntp_active_fetch(struct NntpAccountData *adata, bool new)
     return -1;
   }
 
-  if (new)
+  if (new_)
   {
     for (; i < adata->groups_num; i++)
     {
       struct NntpMboxData *mdata = adata->groups_list[i];
-      mdata->new = true;
+      mdata->new_ = true;
     }
   }
 
@@ -2184,7 +2184,7 @@ int nntp_check_new_groups(struct Mailbox *m, struct NntpAccountData *adata)
     for (; i < adata->groups_num; i++)
     {
       struct NntpMboxData *mdata = adata->groups_list[i];
-      mdata->new = true;
+      mdata->new_ = true;
     }
 
     /* loading descriptions */

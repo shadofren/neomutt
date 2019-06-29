@@ -1705,21 +1705,21 @@ static bool check_boundary(const char *boundary, struct Body *b)
  */
 struct Body *mutt_make_multipart(struct Body *b)
 {
-  struct Body *new = mutt_body_new();
-  new->type = TYPE_MULTIPART;
-  new->subtype = mutt_str_strdup("mixed");
-  new->encoding = get_toplevel_encoding(b);
+  struct Body *new_ = mutt_body_new();
+  new_->type = TYPE_MULTIPART;
+  new_->subtype = mutt_str_strdup("mixed");
+  new_->encoding = get_toplevel_encoding(b);
   do
   {
-    mutt_generate_boundary(&new->parameter);
-    if (check_boundary(mutt_param_get(&new->parameter, "boundary"), b))
-      mutt_param_delete(&new->parameter, "boundary");
-  } while (!mutt_param_get(&new->parameter, "boundary"));
-  new->use_disp = false;
-  new->disposition = DISP_INLINE;
-  new->parts = b;
+    mutt_generate_boundary(&new_->parameter);
+    if (check_boundary(mutt_param_get(&new_->parameter, "boundary"), b))
+      mutt_param_delete(&new_->parameter, "boundary");
+  } while (!mutt_param_get(&new_->parameter, "boundary"));
+  new_->use_disp = false;
+  new_->disposition = DISP_INLINE;
+  new_->parts = b;
 
-  return new;
+  return new_;
 }
 
 /**
