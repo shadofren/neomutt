@@ -119,17 +119,17 @@ static const char *rotate_logs(const char *file, int count)
     return NULL;
 
   char old[PATH_MAX];
-  char new[PATH_MAX];
+  char new_file[PATH_MAX];
 
   /* rotate the old debug logs */
   for (count -= 2; count >= 0; count--)
   {
     snprintf(old, sizeof(old), "%s%d", file, count);
-    snprintf(new, sizeof(new), "%s%d", file, count + 1);
+    snprintf(new_file, sizeof(new_file), "%s%d", file, count + 1);
 
     mutt_expand_path(old, sizeof(old));
-    mutt_expand_path(new, sizeof(new));
-    rename(old, new);
+    mutt_expand_path(new_file, sizeof(new_file));
+    rename(old, new_file);
   }
 
   return mutt_str_strdup(old);

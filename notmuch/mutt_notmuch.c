@@ -1491,13 +1491,13 @@ static int remove_filename(struct Mailbox *m, const char *path)
 /**
  * rename_filename - Rename the file
  * @param m   Notmuch Mailbox data
- * @param old Old filename
- * @param new_ New filename
+ * @param old_filename Old filename
+ * @param new_filename New filename
  * @param e   Email
  * @retval  0 Success
  * @retval -1 Failure
  */
-static int rename_filename(struct Mailbox *m, const char *old, const char *new_,
+static int rename_filename(struct Mailbox *m, const char *old_filename, const char *new_filename,
                            struct Email *e)
 {
   struct NmMboxData *mdata = nm_mdata_get(m);
@@ -1505,7 +1505,7 @@ static int rename_filename(struct Mailbox *m, const char *old, const char *new_,
     return -1;
 
   notmuch_database_t *db = nm_db_get(m, true);
-  if (!db || !new_ || !old || (access(new_, F_OK) != 0))
+  if (!db || !new_filename|| !old_filename || (access(new_filename, F_OK) != 0))
     return -1;
 
   int rc = -1;
@@ -1513,26 +1513,26 @@ static int rename_filename(struct Mailbox *m, const char *old, const char *new_,
   notmuch_filenames_t *ls = NULL;
   notmuch_message_t *msg = NULL;
 
-  mutt_debug(LL_DEBUG1, "nm: rename filename, %s -> %s\n", old, new);
+  mutt_debug(LL_DEBUG1, "nm: rename filename, %s -> %s\n", old_filename, new_filename);
   int trans = nm_db_trans_begin(m);
   if (trans < 0)
     return -1;
 
-  mutt_debug(LL_DEBUG2, "nm: rename: add '%s'\n", new);
+  mutt_debug(LL_DEBUG2, "nm: rename: add '%s'\n", new_filename);
 #ifdef HAVE_NOTMUCH_DATABASE_INDEX_FILE
-  st = notmuch_database_index_file(db, new, NULL, &msg);
+  st = notmuch_database_index_file(db, new_filename, NULL, &msg);
 #else
-  st = notmuch_database_add_message(db, new, &msg);
+  st = notmuch_database_add_message(db, new_filename, &msg);
 #endif
 
   if ((st != NOTMUCH_STATUS_SUCCESS) && (st != NOTMUCH_STATUS_DUPLICATE_MESSAGE_ID))
   {
-    mutt_debug(LL_DEBUG1, "nm: failed to add '%s' [st=%d]\n", new, (int) st);
+    mutt_debug(LL_DEBUG1, "nm: failed to add '%s' [st=%d]\n", new_filename, (int) st);
     goto done;
   }
 
-  mutt_debug(LL_DEBUG2, "nm: rename: rem '%s'\n", old);
-  st = notmuch_database_remove_message(db, old);
+  mutt_debug(LL_DEBUG2, "nm: rename: rem '%s'\n", old_filename);
+  st = notmuch_database_remove_message(db, old_filename);
   switch (st)
   {
     case NOTMUCH_STATUS_SUCCESS:
@@ -1541,7 +1541,7 @@ static int rename_filename(struct Mailbox *m, const char *old, const char *new_,
       mutt_debug(LL_DEBUG2, "nm: rename: syncing duplicate filename\n");
       notmuch_message_destroy(msg);
       msg = NULL;
-      notmuch_database_find_message_by_filename(db, new, &msg);
+      notmuch_database_find_message_by_filename(db, new_filename, &msg);
 
       for (ls = notmuch_message_get_filenames(msg);
            msg && ls && notmuch_filenames_valid(ls); notmuch_filenames_move_to_next(ls))
@@ -1549,7 +1549,7 @@ static int rename_filename(struct Mailbox *m, const char *old, const char *new_,
         const char *path = notmuch_filenames_get(ls);
         char newpath[PATH_MAX];
 
-        if (strcmp(new, path) == 0)
+        if (strcmp(new_filename, path) == 0)
           continue;
 
         mutt_debug(LL_DEBUG2, "nm: rename: syncing duplicate: %s\n", path);
@@ -1567,11 +1567,11 @@ static int rename_filename(struct Mailbox *m, const char *old, const char *new_,
       }
       notmuch_message_destroy(msg);
       msg = NULL;
-      notmuch_database_find_message_by_filename(db, new, &msg);
+      notmuch_database_find_message_by_filename(db, new_filename, &msg);
       st = NOTMUCH_STATUS_SUCCESS;
       break;
     default:
-      mutt_debug(LL_DEBUG1, "nm: failed to remove '%s' [st=%d]\n", old, (int) st);
+      mutt_debug(LL_DEBUG1, "nm: failed to remove '%s' [st=%d]\n", old_filename, (int) st);
       break;
   }
 
@@ -1886,26 +1886,26 @@ bool nm_message_is_still_queried(struct Mailbox *m, struct Email *e)
 /**
  * nm_update_filename - Change the filename
  * @param m   Mailbox
- * @param old Old filename
- * @param new New filename
+ * @param old_filename Old filename
+ * @param new_filename New filename
  * @param e   Email
  * @retval  0 Success
  * @retval -1 Failure
  */
-int nm_update_filename(struct Mailbox *m, const char *old, const char *new, struct Email *e)
+int nm_update_filename(struct Mailbox *m, const char *old_filename, const char *new_filename, struct Email *e)
 {
   char buf[PATH_MAX];
   struct NmMboxData *mdata = nm_mdata_get(m);
-  if (!mdata || !new)
+  if (!mdata || !new_filename)
     return -1;
 
-  if (!old && e && e->edata)
+  if (!old_filename && e && e->edata)
   {
     email_get_fullpath(e, buf, sizeof(buf));
-    old = buf;
+    old_filename = buf;
   }
 
-  int rc = rename_filename(m, old, new, e);
+  int rc = rename_filename(m, old_filename, new_filename, e);
 
   nm_db_release(m);
   m->mtime.tv_sec = time(NULL);
