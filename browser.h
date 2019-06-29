@@ -67,7 +67,7 @@ struct FolderFile
   char *name;
   char *desc;
 
-  bool new;       /**< true if mailbox has "new mail" */
+  bool has_new_mail;
   int msg_count;  /**< total number of messages */
   int msg_unread; /**< number of unread messages */
 

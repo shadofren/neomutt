@@ -539,7 +539,7 @@ static const char *folder_format_str(char *buf, size_t buflen, size_t col, int c
 
     case 'N':
       snprintf(fmt, sizeof(fmt), "%%%sc", prec);
-      snprintf(buf, buflen, fmt, folder->ff->new ? 'N' : ' ');
+      snprintf(buf, buflen, fmt, folder->ff->has_new_mail ? 'N' : ' ');
       break;
 
     case 'n':
@@ -645,7 +645,7 @@ static void add_folder(struct Menu *menu, struct BrowserState *state,
   if (m)
   {
     (state->entry)[state->entrylen].has_mailbox = true;
-    (state->entry)[state->entrylen].new = m->has_new;
+    (state->entry)[state->entrylen].has_new_mail = m->has_new;
     (state->entry)[state->entrylen].msg_count = m->msg_count;
     (state->entry)[state->entrylen].msg_unread = m->msg_unread;
   }
