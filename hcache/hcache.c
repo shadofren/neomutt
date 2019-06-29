@@ -444,7 +444,7 @@ int mutt_hcache_store_raw(header_cache_t *hc, const char *key, size_t keylen,
 }
 
 /**
- * mutt_hcache_delete - Multiplexor for HcacheOps::delete
+ * mutt_hcache_delete - Multiplexor for HcacheOps::delete_header
  */
 int mutt_hcache_delete(header_cache_t *hc, const char *key, size_t keylen)
 {
@@ -456,7 +456,7 @@ int mutt_hcache_delete(header_cache_t *hc, const char *key, size_t keylen)
 
   keylen = snprintf(path, sizeof(path), "%s%s", hc->folder, key);
 
-  return ops->delete (hc->ctx, path, keylen);
+  return ops->delete_header(hc->ctx, path, keylen);
 }
 
 /**

@@ -110,7 +110,7 @@ static int hcache_kyotocabinet_store(void *ctx, const char *key, size_t keylen,
 }
 
 /**
- * hcache_kyotocabinet_delete - Implements HcacheOps::delete()
+ * hcache_kyotocabinet_delete - Implements HcacheOps::delete_header()
  */
 static int hcache_kyotocabinet_delete(void *ctx, const char *key, size_t keylen)
 {

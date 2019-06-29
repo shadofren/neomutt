@@ -87,7 +87,7 @@ static int hcache_qdbm_store(void *ctx, const char *key, size_t keylen, void *da
 }
 
 /**
- * hcache_qdbm_delete - Implements HcacheOps::delete()
+ * hcache_qdbm_delete - Implements HcacheOps::delete_header()
  */
 static int hcache_qdbm_delete(void *ctx, const char *key, size_t keylen)
 {

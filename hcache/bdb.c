@@ -204,7 +204,7 @@ static int hcache_bdb_store(void *vctx, const char *key, size_t keylen, void *da
 }
 
 /**
- * hcache_bdb_delete - Implements HcacheOps::delete()
+ * hcache_bdb_delete - Implements HcacheOps::delete_header()
  */
 static int hcache_bdb_delete(void *vctx, const char *key, size_t keylen)
 {

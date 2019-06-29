@@ -251,7 +251,7 @@ static int hcache_lmdb_store(void *vctx, const char *key, size_t keylen, void *d
 }
 
 /**
- * hcache_lmdb_delete - Implements HcacheOps::delete()
+ * hcache_lmdb_delete - Implements HcacheOps::delete_header()
  */
 static int hcache_lmdb_delete(void *vctx, const char *key, size_t keylen)
 {
