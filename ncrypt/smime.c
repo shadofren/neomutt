@@ -707,7 +707,7 @@ static struct SmimeKey *smime_parse_key(char *buf)
  * @param public If true, only get the public keys
  * @retval ptr Matching key
  */
-static struct SmimeKey *smime_get_candidates(char *search, bool public)
+static struct SmimeKey *smime_get_candidates(char *search, bool only_public_key)
 {
   char index_file[PATH_MAX];
   char buf[1024];
@@ -715,7 +715,7 @@ static struct SmimeKey *smime_get_candidates(char *search, bool public)
   struct SmimeKey **results_end = &results;
 
   snprintf(index_file, sizeof(index_file), "%s/.index",
-           public ? NONULL(C_SmimeCertificates) : NONULL(C_SmimeKeys));
+           only_public_key ? NONULL(C_SmimeCertificates) : NONULL(C_SmimeKeys));
 
   FILE *fp = mutt_file_fopen(index_file, "r");
   if (!fp)
@@ -751,10 +751,10 @@ static struct SmimeKey *smime_get_candidates(char *search, bool public)
  * Returns the first matching key record, without prompting or checking of
  * abilities or trust.
  */
-static struct SmimeKey *smime_get_key_by_hash(char *hash, bool public)
+static struct SmimeKey *smime_get_key_by_hash(char *hash, bool only_public_key)
 {
   struct SmimeKey *match = NULL;
-  struct SmimeKey *results = smime_get_candidates(hash, public);
+  struct SmimeKey *results = smime_get_candidates(hash, only_public_key);
   for (struct SmimeKey *result = results; result; result = result->next)
   {
     if (mutt_str_strcasecmp(hash, result->hash) == 0)
@@ -778,7 +778,7 @@ static struct SmimeKey *smime_get_key_by_hash(char *hash, bool public)
  * @retval ptr Matching key
  */
 static struct SmimeKey *smime_get_key_by_addr(char *mailbox, KeyFlags abilities,
-                                              bool public, bool may_ask)
+                                              bool only_public_key, bool may_ask)
 {
   if (!mailbox)
     return NULL;
@@ -792,7 +792,7 @@ static struct SmimeKey *smime_get_key_by_addr(char *mailbox, KeyFlags abilities,
   struct SmimeKey *return_key = NULL;
   bool multi_trusted_matches = false;
 
-  results = smime_get_candidates(mailbox, public);
+  results = smime_get_candidates(mailbox, only_public_key);
   for (result = results; result; result = result->next)
   {
     if (abilities && !(result->flags & abilities))
@@ -856,7 +856,7 @@ static struct SmimeKey *smime_get_key_by_addr(char *mailbox, KeyFlags abilities,
  * @param public    If true, only get the public keys
  * @retval ptr Matching key
  */
-static struct SmimeKey *smime_get_key_by_str(char *str, KeyFlags abilities, bool public)
+static struct SmimeKey *smime_get_key_by_str(char *str, KeyFlags abilities, bool only_public_key)
 {
   if (!str)
     return NULL;
@@ -867,7 +867,7 @@ static struct SmimeKey *smime_get_key_by_str(char *str, KeyFlags abilities, bool
   struct SmimeKey *match = NULL;
   struct SmimeKey *return_key = NULL;
 
-  results = smime_get_candidates(str, public);
+  results = smime_get_candidates(str, only_public_key);
   for (result = results; result; result = result->next)
   {
     if (abilities && !(result->flags & abilities))
@@ -902,7 +902,7 @@ static struct SmimeKey *smime_get_key_by_str(char *str, KeyFlags abilities, bool
  * @param public    If true, only get the public keys
  * @retval ptr Selected SMIME key
  */
-static struct SmimeKey *smime_ask_for_key(char *prompt, KeyFlags abilities, bool public)
+static struct SmimeKey *smime_ask_for_key(char *prompt, KeyFlags abilities, bool only_public_key)
 {
   struct SmimeKey *key = NULL;
   char resp[128];
@@ -918,7 +918,7 @@ static struct SmimeKey *smime_ask_for_key(char *prompt, KeyFlags abilities, bool
     if (mutt_get_field(prompt, resp, sizeof(resp), MUTT_CLEAR) != 0)
       return NULL;
 
-    key = smime_get_key_by_str(resp, abilities, public);
+    key = smime_get_key_by_str(resp, abilities, only_public_key);
     if (key)
       return key;
 
